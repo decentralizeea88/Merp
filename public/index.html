@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Merp — Salon ERP</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%87%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-icon">💇</span>
+        <div>
+          <div class="brand-name" id="brand-name">Merp</div>
+          <div class="brand-sub">Salon ERP</div>
+        </div>
+      </div>
+      <nav class="nav" id="nav">
+        <a href="#/dashboard" data-view="dashboard"><span>📊</span> Dashboard</a>
+        <a href="#/appointments" data-view="appointments"><span>📅</span> Appointments</a>
+        <a href="#/clients" data-view="clients"><span>👤</span> Clients</a>
+        <a href="#/services" data-view="services"><span>💅</span> Services</a>
+        <a href="#/staff" data-view="staff"><span>🧑‍💼</span> Staff</a>
+        <a href="#/inventory" data-view="inventory"><span>📦</span> Inventory</a>
+        <a href="#/pos" data-view="pos"><span>🧾</span> Point of Sale</a>
+        <a href="#/invoices" data-view="invoices"><span>💰</span> Invoices</a>
+        <a href="#/settings" data-view="settings"><span>⚙️</span> Settings</a>
+      </nav>
+    </aside>
+    <main class="main" id="main">
+      <div class="loading">Loading…</div>
+    </main>
+  </div>
+  <div class="modal-backdrop hidden" id="modal-backdrop">
+    <div class="modal" id="modal"></div>
+  </div>
+  <div class="toast hidden" id="toast"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
