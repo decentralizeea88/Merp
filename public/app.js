@@ -49,6 +49,22 @@
     return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
+  function downloadCSV(filename, rows) {
+    if (!rows.length) return toast('Nothing to export', true);
+    const headers = Object.keys(rows[0]);
+    const cell = (v) => {
+      v = String(v ?? '');
+      return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    };
+    const csv = [headers.join(','), ...rows.map((r) => headers.map((h) => cell(r[h])).join(','))].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast(`Exported ${filename}`);
+  }
+
   function toast(msg, isError = false) {
     const el = $('#toast');
     el.textContent = msg;
@@ -104,6 +120,7 @@
     inventory: renderInventory,
     pos: renderPOS,
     invoices: renderInvoices,
+    reports: renderReports,
     settings: renderSettings
   };
 
@@ -215,7 +232,20 @@
     });
   }
 
+  function viewToggle(mode) {
+    return `<div class="btn-row">
+      <button class="btn small ${mode === 'list' ? 'primary' : ''}" id="mode-list">List</button>
+      <button class="btn small ${mode === 'week' ? 'primary' : ''}" id="mode-week">Week</button>
+    </div>`;
+  }
+
+  function bindViewToggle() {
+    $('#mode-list').onclick = () => { state.apptMode = 'list'; renderAppointments(); };
+    $('#mode-week').onclick = () => { state.apptMode = 'week'; renderAppointments(); };
+  }
+
   function renderAppointments() {
+    if ((state.apptMode || 'list') === 'week') return renderWeekView();
     const params = new URLSearchParams(location.hash.split('?')[1] || '');
     const filter = state.apptFilter || { status: 'all', staffId: 'all', from: todayISO() };
     let appts = [...state.appointments];
@@ -229,7 +259,7 @@
     for (const a of appts) (groups[a.date] ||= []).push(a);
 
     main.innerHTML = `
-      ${header('Appointments', `${appts.length} shown`, '<button class="btn primary" id="new-appt">＋ New appointment</button>')}
+      ${header('Appointments', `${appts.length} shown`, `${viewToggle('list')} <button class="btn primary" id="new-appt">＋ New appointment</button>`)}
       <div class="card"><div class="card-body filters">
         <label class="field">Status<select id="f-status">
           ${['all', 'scheduled', 'completed', 'cancelled', 'no-show'].map((s) => `<option ${filter.status === s ? 'selected' : ''}>${s}</option>`).join('')}
@@ -245,6 +275,7 @@
           ${apptTable(list, { hideDate: true, actions: true })}
         </div>`).join('')}`;
 
+    bindViewToggle();
     $('#new-appt').onclick = () => appointmentForm();
     $('#f-status').onchange = (e) => { state.apptFilter = { ...filter, status: e.target.value }; renderAppointments(); };
     $('#f-staff').onchange = (e) => { state.apptFilter = { ...filter, staffId: e.target.value }; renderAppointments(); };
@@ -257,9 +288,73 @@
     }
   }
 
-  function appointmentForm(appt) {
+  function renderWeekView() {
+    // Monday of the displayed week, stored as ISO date.
+    if (!state.weekStart) {
+      const d = new Date();
+      d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+      state.weekStart = d.toISOString().slice(0, 10);
+    }
+    const start = new Date(state.weekStart + 'T00:00:00');
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      return d.toISOString().slice(0, 10);
+    });
+    const end = days[6];
+    const shift = (n) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + n);
+      state.weekStart = d.toISOString().slice(0, 10);
+      renderAppointments();
+    };
+    const rangeLabel = `${fmtDate(days[0])} – ${fmtDate(end)}`;
+
+    main.innerHTML = `
+      ${header('Appointments', rangeLabel, `${viewToggle('week')}
+        <div class="btn-row">
+          <button class="btn small" id="wk-prev">‹ Prev</button>
+          <button class="btn small" id="wk-today">Today</button>
+          <button class="btn small" id="wk-next">Next ›</button>
+        </div>
+        <button class="btn primary" id="new-appt">＋ New appointment</button>`)}
+      <div class="week-grid">
+        ${days.map((date) => {
+          const isToday = date === todayISO();
+          const appts = state.appointments
+            .filter((a) => a.date === date && a.status !== 'cancelled')
+            .sort((a, b) => a.time.localeCompare(b.time));
+          return `<div class="week-col${isToday ? ' today' : ''}">
+            <div class="week-col-head">
+              <span>${fmtDate(date)}</span>
+              <button class="btn small" data-book="${date}" title="Book on this day">＋</button>
+            </div>
+            ${appts.map((a) => `
+              <button class="appt-chip ${a.status}" data-chip="${a.id}">
+                <div class="chip-time">${esc(a.time)} · ${esc(staffName(a.staffId))}</div>
+                <div class="chip-client">${esc(clientName(a.clientId))}</div>
+                <div class="chip-svc">${esc(serviceNames(a.serviceIds))}</div>
+              </button>`).join('') || '<div class="week-empty">—</div>'}
+          </div>`;
+        }).join('')}
+      </div>`;
+
+    bindViewToggle();
+    $('#new-appt').onclick = () => appointmentForm();
+    $('#wk-prev').onclick = () => shift(-7);
+    $('#wk-next').onclick = () => shift(7);
+    $('#wk-today').onclick = () => { state.weekStart = null; renderAppointments(); };
+    main.querySelectorAll('[data-book]').forEach((btn) => {
+      btn.onclick = () => appointmentForm(null, { date: btn.dataset.book });
+    });
+    main.querySelectorAll('[data-chip]').forEach((btn) => {
+      btn.onclick = () => appointmentForm(byId('appointments', btn.dataset.chip));
+    });
+  }
+
+  function appointmentForm(appt, defaults = {}) {
     const isEdit = !!appt;
-    appt = appt || { date: todayISO(), time: '10:00', status: 'scheduled', serviceIds: [] };
+    appt = appt || { date: defaults.date || todayISO(), time: '10:00', status: 'scheduled', serviceIds: [] };
     const activeServices = state.services.filter((s) => s.active !== false);
     openModal(isEdit ? 'Edit appointment' : 'New appointment', `
       <div class="form-grid">
@@ -694,6 +789,91 @@
         <div class="row"><span>Tax (${inv.taxRate}%)</span><span>${money(inv.tax)}</span></div>
         <div class="row grand"><span>Total</span><span>${money(inv.total)}</span></div>
       </div>`, { submitLabel: 'Close' });
+  }
+
+  // ----- Reports -----
+  function renderReports() {
+    const month = state.reportMonth || todayISO().slice(0, 7);
+    const monthLabel = new Date(month + '-01T00:00:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+    const invoices = state.invoices.filter((i) => i.status === 'paid' && (i.createdAt || '').slice(0, 7) === month);
+    const revenue = invoices.reduce((s, i) => s + i.total, 0);
+    const avgTicket = invoices.length ? revenue / invoices.length : 0;
+    const lineRev = (type) => invoices.reduce((s, i) => s + i.items.filter((it) => it.type === type).reduce((x, it) => x + it.qty * it.unitPrice, 0), 0);
+    const serviceRev = lineRev('service');
+    const productRev = lineRev('product');
+
+    const completed = state.appointments.filter((a) => a.status === 'completed' && a.date.slice(0, 7) === month);
+
+    // Commission payouts: each staff member's completed-appointment service
+    // revenue for the month times their commission rate.
+    const commissions = state.staff.map((s) => {
+      const appts = completed.filter((a) => a.staffId === s.id);
+      const rev = appts.reduce((sum, a) => sum + (a.serviceIds || []).reduce((x, sid) => x + (byId('services', sid)?.price || 0), 0), 0);
+      return { staff: s, appts: appts.length, revenue: rev, payout: rev * (s.commissionPct || 0) / 100 };
+    }).filter((c) => c.appts > 0 || c.staff.active !== false);
+
+    // Top services by bookings this month.
+    const counts = {};
+    for (const a of completed) for (const sid of a.serviceIds || []) counts[sid] = (counts[sid] || 0) + 1;
+    const topServices = Object.entries(counts)
+      .map(([sid, n]) => ({ svc: byId('services', sid), n }))
+      .filter((x) => x.svc)
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 8);
+
+    main.innerHTML = `
+      ${header('Reports', monthLabel, `
+        <input type="month" id="report-month" value="${month}">
+        <button class="btn" id="exp-commissions">⬇ Commissions CSV</button>
+        <button class="btn" id="exp-invoices">⬇ Invoices CSV</button>
+        <button class="btn" id="exp-clients">⬇ Clients CSV</button>`)}
+      <div class="stat-grid">
+        <div class="stat-card"><div class="label">Revenue</div><div class="value">${money(revenue)}</div><div class="hint">${invoices.length} paid invoices</div></div>
+        <div class="stat-card"><div class="label">Average ticket</div><div class="value">${money(avgTicket)}</div><div class="hint">per invoice</div></div>
+        <div class="stat-card"><div class="label">Service sales</div><div class="value">${money(serviceRev)}</div><div class="hint">before discount/tax</div></div>
+        <div class="stat-card"><div class="label">Retail sales</div><div class="value">${money(productRev)}</div><div class="hint">before discount/tax</div></div>
+        <div class="stat-card"><div class="label">Completed visits</div><div class="value">${completed.length}</div><div class="hint">appointments</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Staff commission payouts</div>
+          ${commissions.length ? `<div class="table-wrap"><table>
+            <thead><tr><th>Staff</th><th class="num">Visits</th><th class="num">Service revenue</th><th class="num">Rate</th><th class="num">Payout</th></tr></thead>
+            <tbody>${commissions.map((c) => `<tr>
+              <td>${esc(c.staff.name)}</td><td class="num">${c.appts}</td>
+              <td class="num">${money(c.revenue)}</td><td class="num">${c.staff.commissionPct ?? 0}%</td>
+              <td class="num"><strong>${money(c.payout)}</strong></td></tr>`).join('')}
+              <tr><td><strong>Total</strong></td><td class="num">${completed.length}</td>
+                <td class="num"><strong>${money(commissions.reduce((s, c) => s + c.revenue, 0))}</strong></td><td></td>
+                <td class="num"><strong>${money(commissions.reduce((s, c) => s + c.payout, 0))}</strong></td></tr>
+            </tbody></table></div>` : '<div class="empty">No completed appointments this month</div>'}
+        </div>
+        <div class="card">
+          <div class="card-title">Top services</div>
+          ${topServices.length ? `<div class="table-wrap"><table>
+            <thead><tr><th>Service</th><th class="num">Bookings</th><th class="num">List price</th></tr></thead>
+            <tbody>${topServices.map((t) => `<tr><td>${esc(t.svc.name)}</td><td class="num">${t.n}</td><td class="num">${money(t.svc.price)}</td></tr>`).join('')}</tbody>
+          </table></div>` : '<div class="empty">No completed appointments this month</div>'}
+        </div>
+      </div>`;
+
+    $('#report-month').onchange = (e) => { state.reportMonth = e.target.value; renderReports(); };
+    $('#exp-commissions').onclick = () => downloadCSV(`commissions-${month}.csv`, commissions.map((c) => ({
+      staff: c.staff.name, role: c.staff.role || '', visits: c.appts,
+      service_revenue: c.revenue.toFixed(2), commission_pct: c.staff.commissionPct ?? 0, payout: c.payout.toFixed(2)
+    })));
+    $('#exp-invoices').onclick = () => downloadCSV(`invoices-${month}.csv`, invoices.map((i) => ({
+      number: i.number, date: (i.createdAt || '').slice(0, 10), client: i.clientId ? clientName(i.clientId) : 'Walk-in',
+      items: i.items.map((it) => `${it.qty}x ${it.name}`).join('; '),
+      subtotal: i.subtotal.toFixed(2), discount: i.discount.toFixed(2), tax: i.tax.toFixed(2),
+      total: i.total.toFixed(2), payment: i.paymentMethod, status: i.status
+    })));
+    $('#exp-clients').onclick = () => downloadCSV('clients.csv', state.clients.map((c) => ({
+      name: c.name, phone: c.phone || '', email: c.email || '', notes: c.notes || '',
+      visits: state.appointments.filter((a) => a.clientId === c.id && a.status === 'completed').length,
+      total_spent: state.invoices.filter((i) => i.clientId === c.id && i.status === 'paid').reduce((s, i) => s + i.total, 0).toFixed(2)
+    })));
   }
 
   // ----- Settings -----

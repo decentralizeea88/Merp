@@ -18,13 +18,14 @@ appointments) on first run so every screen is populated immediately.
 | Module | What it does |
 | --- | --- |
 | **Dashboard** | Today's schedule, revenue today/this month, client count, low-stock alerts |
-| **Appointments** | Book, edit, cancel; filter by status/staff/date; grouped by day; one-click checkout to POS |
+| **Appointments** | Book, edit, cancel; list view with status/staff/date filters or weekly calendar view; one-click checkout to POS |
 | **Clients** | CRM with search, notes (allergies/preferences), visit history and lifetime spend |
 | **Services** | Catalog grouped by category with price, duration and active flag |
 | **Staff** | Team roster with roles, commission %, 30-day appointment and revenue stats |
 | **Inventory** | Retail products with SKU, cost/sale price, stock levels, reorder alerts and one-click restock |
 | **Point of Sale** | Ring up services + products, per-sale discount, tax, payment method; stock is decremented automatically |
 | **Invoices** | Sequential invoice numbers, itemized detail view, paid/unpaid tracking |
+| **Reports** | Monthly revenue, average ticket, service vs retail split, staff commission payouts, top services; CSV export of commissions, invoices and clients |
 | **Settings** | Salon name, currency, tax rate, opening hours |
 
 ## Architecture
