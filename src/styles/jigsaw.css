@@ -1,0 +1,88 @@
+/* The jigsaw keeps a single stacked column at every width — the tray moves
+   into a rail inside the stage rather than the screen splitting, which is
+   what the sliding board does. */
+.jigsaw-screen {
+  --hud-h: 56px;
+  display: flex;
+  flex-direction: column;
+}
+
+.jigsaw-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  align-self: stretch;
+  overflow: hidden;
+  touch-action: none;
+  contain: layout paint;
+}
+
+@media (min-width: 900px) {
+  .jigsaw-screen {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .jigsaw-screen .board-hud {
+    flex-direction: row;
+    align-items: center;
+    height: var(--hud-h);
+    order: 0;
+    min-width: 0;
+  }
+}
+
+.jigsaw-board {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: content-box;
+  border: 12px solid transparent;
+  background: var(--ground-deep);
+  box-shadow:
+    inset 0 0 0 1px var(--tile-edge),
+    inset 0 2px 8px rgba(35, 26, 18, 0.16);
+}
+
+.jigsaw-board__ghost {
+  position: absolute;
+  inset: 0;
+  background-size: 100% 100%;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.jigsaw-defs {
+  position: absolute;
+}
+
+.jigsaw-piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0;
+  background-repeat: no-repeat;
+  touch-action: none;
+  z-index: 2;
+}
+
+.jigsaw-piece:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 0 var(--focus-ring)) drop-shadow(0 0 3px var(--focus-ring));
+}
+
+.jigsaw-piece--dragging {
+  z-index: 4;
+  filter: drop-shadow(0 5px 12px rgba(35, 26, 18, 0.35));
+}
+
+.jigsaw-piece--placed {
+  z-index: 1;
+  cursor: default;
+}
+
+/* completion reuses the board trace overlay */
+.jigsaw-board .board-trace {
+  inset: -6px;
+}

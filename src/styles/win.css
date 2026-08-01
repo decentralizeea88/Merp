@@ -1,0 +1,78 @@
+.win-card {
+  position: fixed;
+  left: 50%;
+  bottom: max(var(--sp-6), var(--safe-bottom));
+  transform: translate3d(-50%, calc(100% + 80px), 0);
+  width: min(92vw, 420px);
+  background: var(--tile);
+  border: 1px solid var(--tile-edge);
+  border-radius: var(--radius-card);
+  padding: var(--sp-6);
+  box-shadow: 0 12px 40px rgba(20, 12, 5, 0.28);
+  z-index: 10;
+  transition: transform var(--dur-rise) var(--ease-rise);
+  text-align: center;
+}
+
+.win-card--shown {
+  transform: translate3d(-50%, 0, 0);
+}
+
+.win-card__art {
+  margin-top: var(--sp-1);
+}
+
+.win-card__stats {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-8);
+  margin-top: var(--sp-4);
+}
+
+.win-card__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.win-card__label {
+  font-size: var(--size-caption);
+  color: var(--ink-soft);
+}
+
+.win-card__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--size-section);
+  margin: 0;
+}
+
+.win-card__marks {
+  margin-top: var(--sp-3);
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.win-card__mark {
+  font-size: var(--size-caption);
+  font-weight: 600;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-chip);
+  border: 1px solid var(--madder);
+  color: var(--madder);
+}
+
+.win-card__mark--gold {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.win-card__actions {
+  margin-top: var(--sp-4);
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-3);
+}
