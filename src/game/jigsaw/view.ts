@@ -2,7 +2,13 @@
    buttons clipped by shared SVG clipPaths; positions live in stage pixels
    and all measurements are cached outside the gesture. */
 
-import { layoutFor, makePuzzleEdges, piecePath, type Layout } from './geometry';
+import {
+  MAX_TAB_REACH,
+  layoutFor,
+  makePuzzleEdges,
+  piecePath,
+  type Layout,
+} from './geometry';
 import { toGeez } from '../../core/geez';
 import { tf } from '../../i18n/am';
 import { el } from '../../app/shell';
@@ -44,13 +50,21 @@ export const createJigsawView = (stage: HTMLElement, opts: Opts): JigsawView => 
   const stageRect = stage.getBoundingClientRect();
   const boardEl = el('div', 'jigsaw-board');
   stage.append(boardEl);
-  const boardW = Math.min(stageRect.width - 8, stageRect.height * 0.62, 560);
+  /* The harag frame sits outside the content box, so every measurement
+     below separates the playfield (boardW) from its footprint. A stage
+     measured before layout would collapse the puzzle, hence the floor. */
+  const FRAME = 12;
+  const wide = stageRect.width >= 900;
+  const region = wide ? stageRect.width * 0.62 : stageRect.width;
+  const widthBudget = region - 2 * FRAME - 8;
+  const heightBudget = stageRect.height * 0.62 - 2 * FRAME;
+  const boardW = Math.max(200, Math.min(widthBudget, heightBudget, 560));
+  const footprint = boardW + 2 * FRAME;
   boardEl.style.width = `${boardW}px`;
   boardEl.style.height = `${boardW}px`;
-  const boardX = (stageRect.width - boardW) / 2;
+  const boardX = Math.max(4, (region - footprint) / 2);
   const boardY = 4;
-  /* the frame border is outside the content box; snapping aligns to content */
-  const FRAME = 12;
+  /* snapping aligns to the playfield, which starts inside the frame */
   const px0 = boardX + FRAME;
   const py0 = boardY + FRAME;
   boardEl.style.transform = `translate3d(${boardX}px, ${boardY}px, 0)`;
@@ -60,8 +74,12 @@ export const createJigsawView = (stage: HTMLElement, opts: Opts): JigsawView => 
 
   const cellW = boardW / layout.cols;
   const cellH = boardW / layout.rows;
-  const marginX = cellW * 0.34;
-  const marginY = cellH * 0.34;
+  /* knobs reach out by a fraction of the edge they sit on, and a horizontal
+     edge pushes vertically, so one margin sized off the larger cell side
+     clears every case */
+  const margin = Math.max(cellW, cellH) * MAX_TAB_REACH;
+  const marginX = margin;
+  const marginY = margin;
   const tol = Math.max(14, cellW * 0.22);
 
   /* shared clip paths */
@@ -108,17 +126,17 @@ export const createJigsawView = (stage: HTMLElement, opts: Opts): JigsawView => 
 
   /* tray geometry: a pannable row below the board in portrait, a wrapped
      column block beside it in landscape */
-  const wide = stageRect.width >= 900;
   const slotW = cellW + marginX * 2 + 8;
   const slotH = cellH + marginY * 2 + 8;
-  const trayY = boardY + boardW + 18;
-  const perCol = wide ? Math.max(1, Math.floor((stageRect.height - 16) / slotH)) : 1;
+  const trayY = boardY + footprint + 16;
+  const railX = boardX + footprint + 28;
+  /* the rail only wraps into columns that actually fit across, so every
+     piece stays reachable by panning the rail along its one axis */
+  const railCols = Math.max(1, Math.floor((stageRect.width - railX - 8) / slotW));
+  const perCol = wide ? Math.ceil(n / railCols) : 1;
   const traySlot = (index: number): [number, number] =>
     wide
-      ? [
-          boardX + boardW + 28 + Math.floor(index / perCol) * slotW,
-          8 + (index % perCol) * slotH,
-        ]
+      ? [railX + Math.floor(index / perCol) * slotW, 8 + (index % perCol) * slotH]
       : [12 + index * slotW, trayY];
   const inTray = new Set<number>();
 
@@ -155,7 +173,7 @@ export const createJigsawView = (stage: HTMLElement, opts: Opts): JigsawView => 
   /* initial placement: restore, or scatter into the tray */
   if (opts.restore) {
     opts.restore.positions.forEach((p, id) => {
-      pos[id] = [p[0] * boardW + boardX, p[1] * boardW + boardY];
+      pos[id] = [p[0] * boardW + px0, p[1] * boardW + py0];
     });
     for (const id of opts.restore.placed) {
       placed[id] = true;
@@ -348,7 +366,7 @@ export const createJigsawView = (stage: HTMLElement, opts: Opts): JigsawView => 
     board: boardEl,
     placedCount: () => placed.filter(Boolean).length,
     positions: () =>
-      pos.map(([x, y]) => [(x - boardX) / boardW, (y - boardY) / boardW]),
+      pos.map(([x, y]) => [(x - px0) / boardW, (y - py0) / boardW]),
     placedIds: () => placed.flatMap((p, i) => (p ? [i] : [])),
     destroy: () => {
       stage.removeEventListener('pointerdown', onDown);

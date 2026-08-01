@@ -105,34 +105,46 @@
   font-weight: 500;
 }
 
+/* The visible pill is 52×32, but the button keeps a 44px-tall hit area
+   around it — the track is drawn as a pseudo-element so the target can
+   grow without the control looking oversized. */
 .switch {
   width: 52px;
-  height: 32px;
+  height: 44px;
+  position: relative;
+  flex: none;
+  border-radius: 16px;
+}
+
+.switch::before {
+  content: '';
+  position: absolute;
+  inset: 6px 0;
   border-radius: 16px;
   background: var(--ground-deep);
   border: 1px solid var(--tile-edge);
-  position: relative;
-  flex: none;
 }
 
 .switch__thumb {
   position: absolute;
-  top: 3px;
+  top: 50%;
   left: 3px;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--ink-soft);
+  transform: translate3d(0, -50%, 0);
   transition: transform var(--dur-fade) var(--ease-fade);
 }
 
-.switch[aria-checked='true'] {
+.switch[aria-checked='true']::before {
   background: var(--verdigris);
+  border-color: var(--verdigris);
 }
 
 .switch[aria-checked='true'] .switch__thumb {
   background: #f6efe0;
-  transform: translate3d(20px, 0, 0);
+  transform: translate3d(20px, -50%, 0);
 }
 
 .btn--danger {
@@ -146,6 +158,11 @@
   flex-direction: column;
   gap: var(--sp-3);
   flex: 1;
+}
+
+/* a display rule outranks the hidden attribute unless it is stated here */
+.settings__confirm[hidden] {
+  display: none;
 }
 
 .settings__confirm-actions {
@@ -213,4 +230,48 @@
 .gallery__empty {
   padding: 0 var(--gutter) var(--sp-6);
   text-align: center;
+}
+
+/* daily */
+.daily {
+  min-height: 100dvh;
+  padding: calc(var(--sp-4) + var(--safe-top)) var(--gutter)
+    calc(var(--sp-8) + var(--safe-bottom));
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.daily__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  text-align: center;
+  padding-top: var(--sp-4);
+}
+
+.daily__preview {
+  width: min(64vw, 280px);
+  aspect-ratio: 1;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--tile-edge);
+  background-size: cover;
+  background-color: var(--ground-deep);
+}
+
+.daily__preview--done {
+  filter: saturate(0.6);
+}
+
+.daily__streak {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.daily__play {
+  min-width: 200px;
+}
+
+.daily__done {
+  margin-top: var(--sp-2);
 }

@@ -1,14 +1,36 @@
+/* The jigsaw keeps a single stacked column at every width — the tray moves
+   into a rail inside the stage rather than the screen splitting, which is
+   what the sliding board does. */
 .jigsaw-screen {
   --hud-h: 56px;
+  display: flex;
+  flex-direction: column;
 }
 
 .jigsaw-stage {
   position: relative;
   flex: 1;
   min-height: 0;
+  align-self: stretch;
   overflow: hidden;
   touch-action: none;
   contain: layout paint;
+}
+
+@media (min-width: 900px) {
+  .jigsaw-screen {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .jigsaw-screen .board-hud {
+    flex-direction: row;
+    align-items: center;
+    height: var(--hud-h);
+    order: 0;
+    min-width: 0;
+  }
 }
 
 .jigsaw-board {

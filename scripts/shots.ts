@@ -28,9 +28,21 @@ const startPreview = (): Promise<ReturnType<typeof spawn>> =>
     setTimeout(() => reject(new Error('vite preview did not start')), 15000);
   });
 
+/* Every screen, so a run captures the whole game. Override with CLI args. */
+const DEFAULT_ROUTES = [
+  'home',
+  'select?mode=sliding',
+  'board?art=harag&size=4&seed=shot',
+  'board?art=demera&size=5&seed=shot',
+  'jigsaw?art=simien&size=12&seed=shot',
+  'daily',
+  'gallery',
+  'settings',
+];
+
 const main = async (): Promise<void> => {
   const routes = process.argv.slice(2);
-  if (routes.length === 0) routes.push('');
+  if (routes.length === 0) routes.push(...DEFAULT_ROUTES);
   mkdirSync('shots', { recursive: true });
   const preview = await startPreview();
   const browser = await chromium.launch({
@@ -49,6 +61,7 @@ const main = async (): Promise<void> => {
           const url = `http://localhost:${PORT}/${route ? '#' + route : ''}`;
           await page.goto(url, { waitUntil: 'networkidle' });
           await page.evaluate(() => document.fonts.ready);
+          /* generated artwork and the staggered entrances need a beat */
           await page.waitForTimeout(2200);
           const label = route ? route.replace(/[^a-z0-9-]/gi, '_') : 'home';
           await page.screenshot({

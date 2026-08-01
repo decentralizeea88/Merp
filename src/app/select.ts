@@ -2,7 +2,7 @@
    segmented size control. Uncompleted artworks preview blurred. */
 
 import { el, navigate } from './shell';
-import { t } from '../i18n/am';
+import { t, tf } from '../i18n/am';
 import { toGeez } from '../core/geez';
 import * as storage from '../core/storage';
 import { ARTWORKS, renderArtwork } from '../art/registry';
@@ -71,10 +71,16 @@ export const selectScreen = (params: Record<string, string>): HTMLElement => {
   const updateStats = (): void => {
     for (const [artId, statEl] of statEls) {
       const rec = storage.getRecord(storage.puzzleKey(mode, artId, Number(size)));
-      const bits: string[] = [];
-      if (rec.bestTimeMs !== null) bits.push(`${t('board.time')} ${timeText(rec.bestTimeMs)}`);
-      if (rec.bestMoves !== null) bits.push(`${t('board.moves')} ${toGeez(rec.bestMoves)}`);
-      statEl.textContent = bits.length > 0 ? `${t('board.best')}፦ ${bits.join('፣ ')}` : '';
+      const time = rec.bestTimeMs;
+      const mv = rec.bestMoves;
+      statEl.textContent =
+        time !== null && mv !== null
+          ? tf.bestBoth(timeText(time), toGeez(mv))
+          : time !== null
+            ? tf.bestTime(timeText(time))
+            : mv !== null
+              ? tf.bestMoves(toGeez(mv))
+              : '';
     }
   };
   for (const art of ARTWORKS) {

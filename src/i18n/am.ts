@@ -106,6 +106,25 @@ export type StringKey = keyof typeof am;
 
 export const t = (key: StringKey): string => am[key];
 
+/* Ethiopian calendar vocabulary — month 1 is መስከረም, weekday 0 is እሑድ. */
+export const MONTHS = [
+  'መስከረም',
+  'ጥቅምት',
+  'ኅዳር',
+  'ታኅሣሥ',
+  'ጥር',
+  'የካቲት',
+  'መጋቢት',
+  'ሚያዝያ',
+  'ግንቦት',
+  'ሰኔ',
+  'ሐምሌ',
+  'ነሐሴ',
+  'ጳጉሜ',
+] as const;
+
+export const WEEKDAYS = ['እሑድ', 'ሰኞ', 'ማክሰኞ', 'ረቡዕ', 'ሐሙስ', 'ዓርብ', 'ቅዳሜ'] as const;
+
 /* Parameterized strings live as functions so no caller ever assembles Amharic
    by concatenation. */
 export const tf = {
@@ -116,4 +135,18 @@ export const tf = {
   pieceSnapped: (numeral: string): string => `ቁርጥራጭ ${numeral} ተገጣጠመ`,
   completeAnnounce: (title: string): string => `${title} ተጠናቀቀ።`,
   streakCount: (numeral: string): string => `ተከታታይ ${numeral} ቀን`,
+
+  /* month 1-13, day and year already rendered as Ge'ez numerals */
+  ethiopicDate: (month: number, day: string, year: string): string =>
+    `${MONTHS[month - 1] ?? ''} ${day}፣ ${year}`,
+  ethiopicDateFull: (weekday: number, month: number, day: string, year: string): string =>
+    `${WEEKDAYS[weekday] ?? ''}፣ ${MONTHS[month - 1] ?? ''} ${day}፣ ${year}`,
+
+  bestTime: (time: string): string => `${am['board.best']} ${am['board.time']} ${time}`,
+  bestBoth: (time: string, moves: string): string =>
+    `${am['board.best']} ${am['board.time']} ${time}፣ ${am['board.moves']} ${moves}`,
+  bestMoves: (moves: string): string => `${am['board.best']} ${am['board.moves']} ${moves}`,
+
+  todaysArtwork: (title: string): string => `${am['daily.today']} ${title}`,
+  pieceProgress: (done: string, total: string): string => `${done} ከ ${total}`,
 } as const;

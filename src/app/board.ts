@@ -17,12 +17,16 @@ import {
 import { createBoardView, type BoardView } from '../game/sliding/view';
 import { attachInput } from '../game/sliding/input';
 import { runCompletionSequence } from '../core/anim';
+import { recordDailyWin } from '../game/daily';
+
+/* Ge'ez has no zero; an em dash stands in for a count not yet started. */
+export const DASH = '—';
 
 export const timeText = (ms: number): string => {
   const totalS = Math.floor(ms / 1000);
   const m = Math.floor(totalS / 60);
   const s = totalS % 60;
-  const sTxt = s === 0 ? '—' : toGeez(s);
+  const sTxt = s === 0 ? DASH : toGeez(s);
   return m === 0 ? sTxt : `${toGeez(m)}:${sTxt}`;
 };
 
@@ -87,10 +91,10 @@ export const boardScreen = (params: BoardParams): HTMLElement => {
     navigate(isDaily ? 'home' : 'select', isDaily ? {} : { mode: 'sliding' }),
   );
   const timeStat = el('div', 'board-hud__stat');
-  const timeValue = el('span', 'board-hud__value', '—');
+  const timeValue = el('span', 'board-hud__value', DASH);
   timeStat.append(el('span', 'board-hud__label', t('board.time')), timeValue);
   const movesStat = el('div', 'board-hud__stat');
-  const movesValue = el('span', 'board-hud__value', '—');
+  const movesValue = el('span', 'board-hud__value', DASH);
   movesStat.append(el('span', 'board-hud__label', t('board.moves')), movesValue);
   const spacer = el('div', 'board-hud__spacer');
   const pauseBtn = el('button', 'icon-btn');
@@ -144,7 +148,7 @@ export const boardScreen = (params: BoardParams): HTMLElement => {
 
   const updateHud = (): void => {
     timeValue.textContent = timeText(elapsed);
-    movesValue.textContent = moves === 0 ? '—' : toGeez(moves);
+    movesValue.textContent = moves === 0 ? DASH : toGeez(moves);
   };
 
   let tickHandle = 0;
@@ -215,6 +219,7 @@ export const boardScreen = (params: BoardParams): HTMLElement => {
       if (!d.unlocked.includes(art.id)) d.unlocked.push(art.id);
       d.current = null;
     });
+    if (isDaily) recordDailyWin();
     announce(tf.completeAnnounce(t(art.titleKey)));
     playCompletion();
     if (view) {

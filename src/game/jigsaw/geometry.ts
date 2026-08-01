@@ -130,31 +130,37 @@ export const piecePath = (
   const y1 = y0 + cellH;
   const d: string[] = [`M ${x0.toFixed(2)} ${y0.toFixed(2)}`];
 
-  /* top — shared with the piece above; this piece traverses forward */
+  /* The normal is scaled by the edge's own length, not the cross-axis cell
+     size, so a knob keeps the same proportions on every edge even when
+     cells are not square. */
   if (r === 0) d.push(`L ${x1.toFixed(2)} ${y0.toFixed(2)}`);
   else {
     const e = edges.horizontal[r - 1]?.[c] as EdgeShape;
-    emitChain(d, e, [x0, y0], [cellW, 0], [0, cellH]);
+    emitChain(d, e, [x0, y0], [cellW, 0], [0, cellW]);
   }
   /* right — canonical top→bottom, forward */
   if (c === layout.cols - 1) d.push(`L ${x1.toFixed(2)} ${y1.toFixed(2)}`);
   else {
     const e = edges.vertical[r]?.[c] as EdgeShape;
-    emitChain(d, e, [x1, y0], [0, cellH], [cellW, 0]);
+    emitChain(d, e, [x1, y0], [0, cellH], [cellH, 0]);
   }
   /* bottom — canonical left→right, so traverse reversed (right→left) */
   if (r === layout.rows - 1) d.push(`L ${x0.toFixed(2)} ${y1.toFixed(2)}`);
   else {
     const e = reverseEdge(edges.horizontal[r]?.[c] as EdgeShape);
     /* reversed chain runs x 1→0 in the same frame anchored at the left */
-    emitChain(d, e, [x0, y1], [cellW, 0], [0, cellH]);
+    emitChain(d, e, [x0, y1], [cellW, 0], [0, cellW]);
   }
   /* left — canonical top→bottom, traverse reversed (bottom→top) */
   if (c === 0) d.push('Z');
   else {
     const e = reverseEdge(edges.vertical[r]?.[c - 1] as EdgeShape);
-    emitChain(d, e, [x0, y0], [0, cellH], [cellW, 0]);
+    emitChain(d, e, [x0, y0], [0, cellH], [cellH, 0]);
     d.push('Z');
   }
   return d.join(' ');
 };
+
+/* How far a knob can reach past its cell, as a fraction of the edge it sits
+   on — the view sizes piece boxes from this so nothing is ever cut off. */
+export const MAX_TAB_REACH = 0.32;

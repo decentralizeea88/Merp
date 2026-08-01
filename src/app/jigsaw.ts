@@ -10,7 +10,7 @@ import { ARTWORKS, artworkById, renderArtwork, renderFrameImage } from '../art/r
 import { layoutFor } from '../game/jigsaw/geometry';
 import { createJigsawView, type JigsawView } from '../game/jigsaw/view';
 import { runCompletionSequence } from '../core/anim';
-import { timeText } from './board';
+import { DASH, timeText } from './board';
 
 type JigsawParams = { art?: string; size?: string; seed?: string; continue?: string };
 
@@ -52,10 +52,10 @@ export const jigsawScreen = (params: JigsawParams): HTMLElement => {
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
   back.addEventListener('click', () => navigate('select', { mode: 'jigsaw' }));
   const timeStat = el('div', 'board-hud__stat');
-  const timeValue = el('span', 'board-hud__value', '—');
+  const timeValue = el('span', 'board-hud__value', DASH);
   timeStat.append(el('span', 'board-hud__label', t('board.time')), timeValue);
   const doneStat = el('div', 'board-hud__stat');
-  const doneValue = el('span', 'board-hud__value', '—');
+  const doneValue = el('span', 'board-hud__value', DASH);
   doneStat.append(el('span', 'board-hud__label', t('size.pieces')), doneValue);
   hud.append(back, timeStat, doneStat, el('div', 'board-hud__spacer'));
   const stage = el('div', 'jigsaw-stage');
@@ -67,7 +67,7 @@ export const jigsawScreen = (params: JigsawParams): HTMLElement => {
   const updateHud = (): void => {
     timeValue.textContent = timeText(elapsed);
     const done = view?.placedCount() ?? 0;
-    doneValue.textContent = done === 0 ? `— / ${toGeez(total)}` : `${toGeez(done)} / ${toGeez(total)}`;
+    doneValue.textContent = tf.pieceProgress(done === 0 ? DASH : toGeez(done), toGeez(total));
   };
 
   let tickHandle = 0;

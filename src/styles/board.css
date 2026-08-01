@@ -210,7 +210,8 @@
 }
 
 .board-toggle__opt {
-  min-height: 38px;
+  min-height: 44px;
+  min-width: 44px;
   padding: 0 var(--sp-4);
   border-radius: 2px;
   font-weight: 600;

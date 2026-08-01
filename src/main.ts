@@ -12,6 +12,7 @@ import { homeScreen } from './app/home';
 import { selectScreen } from './app/select';
 import { boardScreen } from './app/board';
 import { jigsawScreen } from './app/jigsaw';
+import { dailyScreen } from './app/daily';
 import { galleryScreen } from './app/gallery';
 import { settingsScreen } from './app/settings';
 import { artDevScreen } from './app/artdev';
@@ -24,6 +25,7 @@ if (app) {
   registerScreen('select', selectScreen);
   registerScreen('board', boardScreen);
   registerScreen('jigsaw', jigsawScreen);
+  registerScreen('daily', dailyScreen);
   registerScreen('gallery', galleryScreen);
   registerScreen('settings', settingsScreen);
   registerScreen('art', artDevScreen);
@@ -38,4 +40,10 @@ if (app) {
   };
   window.addEventListener('hashchange', openFromHash);
   openFromHash();
+}
+
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js');
+  });
 }
