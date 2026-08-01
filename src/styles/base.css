@@ -133,3 +133,27 @@ button {
   line-height: var(--lh-caption);
   color: var(--ink-soft);
 }
+
+.btn {
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-6);
+  border-radius: var(--radius-chip);
+  border: 1px solid var(--tile-edge);
+  background: var(--tile);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.btn:active {
+  background: var(--ground-deep);
+}
+
+.btn--primary {
+  background: var(--madder);
+  border-color: var(--madder);
+  color: #f6efe0;
+}
+
+.btn--primary:active {
+  background: color-mix(in srgb, var(--madder) 85%, #231a12);
+}

@@ -1,0 +1,270 @@
+/* The well, tiles, motion. Tiles are placed once and move only by
+   transform — positions derive from --col/--row/--gap. */
+
+@property --gap {
+  syntax: '<length>';
+  initial-value: 3px;
+  inherits: true;
+}
+@property --col {
+  syntax: '<number>';
+  initial-value: 0;
+  inherits: false;
+}
+@property --row {
+  syntax: '<number>';
+  initial-value: 0;
+  inherits: false;
+}
+
+.board-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: var(--safe-top) var(--gutter) calc(var(--sp-4) + var(--safe-bottom));
+  --hud-h: 56px;
+  --board-size: min(
+    100vw - 2 * var(--gutter),
+    100dvh - var(--hud-h) - var(--safe-top) - var(--safe-bottom) - 148px,
+    640px
+  );
+}
+
+.board-hud {
+  height: var(--hud-h);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.board-hud__stat {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 72px;
+}
+
+.board-hud__label {
+  font-size: var(--size-caption);
+  color: var(--ink-soft);
+}
+
+.board-hud__value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.board-hud__spacer {
+  flex: 1;
+}
+
+.board-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+}
+
+.board-well {
+  position: relative;
+  contain: layout paint;
+  /* content-box: --board-size is the playfield; the border frames it */
+  box-sizing: content-box;
+  width: var(--board-size);
+  height: var(--board-size);
+  --grid: 4;
+  --gap: 3px;
+  --tile-size: calc((var(--board-size) - (var(--grid) - 1) * var(--gap)) / var(--grid));
+  background: var(--ground-deep);
+  border: 14px solid transparent;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 0 0 1px var(--tile-edge),
+    inset 0 2px 8px rgba(35, 26, 18, 0.18);
+  touch-action: none;
+}
+
+.board-ghost {
+  position: absolute;
+  inset: 0;
+  background-size: 100% 100%;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.board-tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--tile-size);
+  height: var(--tile-size);
+  transform: translate3d(
+    calc(var(--col) * (var(--tile-size) + var(--gap))),
+    calc(var(--row) * (var(--tile-size) + var(--gap))),
+    0
+  );
+  transition: transform var(--dur-slide) var(--ease-slide);
+  border-radius: var(--radius-tile);
+  background-color: var(--tile);
+  box-shadow:
+    inset 0 0 0 1px var(--tile-edge),
+    inset 0 2px 0 rgba(255, 252, 240, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--ink);
+  touch-action: none;
+}
+
+[data-theme='dark'] .board-tile {
+  box-shadow:
+    inset 0 0 0 1px var(--tile-edge),
+    inset 0 2px 0 rgba(255, 240, 210, 0.08);
+}
+
+.board-tile:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -3px;
+  z-index: 2;
+}
+
+.board-tile--dragging {
+  transition: none;
+  z-index: 3;
+  filter: drop-shadow(0 4px 10px rgba(35, 26, 18, 0.3));
+}
+
+.board-tile--spring {
+  transition-duration: var(--dur-spring);
+  transition-timing-function: var(--ease-spring);
+}
+
+.board-tile__numeral {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(var(--tile-size) * 0.28);
+  line-height: 1;
+  /* Ethiopic sits high in its em box — nudge to optical center */
+  padding-top: calc(var(--tile-size) * 0.03);
+  pointer-events: none;
+}
+
+.board-well--image .board-tile {
+  background-image: var(--artwork);
+  background-size: var(--board-size) var(--board-size);
+  background-position: calc(var(--home-col) * -1 * (var(--tile-size) + var(--gap)))
+    calc(var(--home-row) * -1 * (var(--tile-size) + var(--gap)));
+}
+
+.board-well--image .board-tile__numeral {
+  position: absolute;
+  right: calc(var(--tile-size) * 0.06);
+  bottom: calc(var(--tile-size) * 0.05);
+  font-size: calc(var(--tile-size) * 0.14);
+  padding: calc(var(--tile-size) * 0.02) calc(var(--tile-size) * 0.045);
+  background: color-mix(in srgb, var(--tile) 82%, transparent);
+  border-radius: var(--radius-chip);
+  color: var(--ink);
+}
+
+/* completion: seams close, numerals fade, edges dissolve */
+.board-well--complete {
+  transition: --gap 500ms var(--ease-slide);
+  --gap: 0px;
+}
+
+.board-well--complete .board-tile {
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.board-well--complete .board-tile__numeral {
+  opacity: 0;
+  transition: opacity var(--dur-fade) var(--ease-fade);
+}
+
+.board-trace {
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.board-trace rect {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 2.5;
+}
+
+/* segmented control under the board */
+.board-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--tile-edge);
+  border-radius: var(--radius-chip);
+  background: var(--ground-deep);
+}
+
+.board-toggle__opt {
+  min-height: 38px;
+  padding: 0 var(--sp-4);
+  border-radius: 2px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.board-toggle__opt[aria-pressed='true'] {
+  background: var(--tile);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--tile-edge);
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ink);
+}
+
+.icon-btn:active {
+  background: var(--ground-deep);
+}
+
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (min-width: 900px) {
+  .board-screen {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-12);
+    justify-content: center;
+  }
+  .board-stage {
+    flex: initial;
+  }
+  .board-hud {
+    flex-direction: column;
+    height: auto;
+    align-items: flex-start;
+    gap: var(--sp-4);
+    order: 2;
+    min-width: 180px;
+  }
+  .board-hud__spacer {
+    display: none;
+  }
+}

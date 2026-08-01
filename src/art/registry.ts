@@ -3,8 +3,8 @@
 
 import type { StringKey } from '../i18n/am';
 import { rngFrom } from '../core/rng';
-import { ART_SIZE, canvasToBlobUrl, makeCanvas, type Generator } from './canvas';
-import { drawHarag } from './harag';
+import { ART_SIZE, canvasToBlobUrl, makeCanvas, PAL, type Generator } from './canvas';
+import { braidLine, drawHarag, rosette } from './harag';
 import { drawLalibelaCross } from './cross';
 import { drawTilf } from './weave';
 import { drawAxumStele, drawBeteGiyorgis } from './architecture';
@@ -38,6 +38,35 @@ export const ARTWORKS: readonly Artwork[] = [
 
 export const artworkById = (id: string): Artwork | undefined =>
   ARTWORKS.find((a) => a.id === id);
+
+/* The board's harag border, drawn once as a square frame image and applied
+   with border-image so the corners mitre by construction. */
+export const renderFrameImage = async (): Promise<string> => {
+  const s = 384;
+  const { canvas, ctx } = makeCanvas(s);
+  const m = 42;
+  const braid = {
+    bandW: 13,
+    amp: 12,
+    period: 50,
+    colors: [PAL.madder, PAL.gold] as const,
+    edge: 2.5,
+  };
+  const inset = m + 26;
+  braidLine(ctx, inset, m, s - inset, m, braid);
+  braidLine(ctx, s - inset, s - m, inset, s - m, braid);
+  braidLine(ctx, m, s - inset, m, inset, braid);
+  braidLine(ctx, s - m, inset, s - m, s - inset, braid);
+  for (const [cx, cy] of [
+    [m, m],
+    [s - m, m],
+    [m, s - m],
+    [s - m, s - m],
+  ] as const) {
+    rosette(ctx, cx, cy, 17, PAL.indigo);
+  }
+  return canvasToBlobUrl(canvas, 'board-frame');
+};
 
 export const renderArtwork = async (art: Artwork, size = ART_SIZE): Promise<string> => {
   if (art.needsFont && 'fonts' in document) {

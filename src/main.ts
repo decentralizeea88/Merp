@@ -1,9 +1,12 @@
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/home.css';
+import './styles/board.css';
+import './styles/win.css';
 import './styles/artdev.css';
 import { mountShell, registerScreen, navigate, el } from './app/shell';
 import { artDevScreen } from './app/artdev';
+import { boardScreen } from './app/board';
 import { t } from './i18n/am';
 
 /* Phase 1 placeholder home — replaced by the real screen set in Phase 4. */
@@ -20,5 +23,10 @@ if (app) {
   mountShell(app);
   registerScreen('home', homeScreen);
   registerScreen('art', artDevScreen);
-  navigate(location.hash === '#art' ? 'art' : 'home');
+  registerScreen('board', boardScreen);
+  if (location.hash === '#art') navigate('art');
+  else if (location.hash.startsWith('#board')) {
+    const q = new URLSearchParams(location.hash.split('?')[1] ?? '');
+    navigate('board', Object.fromEntries(q));
+  } else navigate('home');
 }

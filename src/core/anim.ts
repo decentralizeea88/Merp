@@ -47,6 +47,90 @@ export const fadeOut = (el: Element, ms = DUR.fade): Animation =>
     fill: 'both',
   });
 
+export type CompletionParts = {
+  well: HTMLElement;
+  card: HTMLElement;
+  onDone?: () => void;
+};
+
+/* The most important six seconds in the game. Beats, from DESIGN_SPEC:
+   trace (0.2s) → seams close (0.5s) → breath (1.0s) → frame bloom (1.6s)
+   → stats card rises (2.2s). Tapping skips to the end state; the sequence
+   never blocks input. */
+export const runCompletionSequence = ({ well, card, onDone }: CompletionParts): void => {
+  const reduced = reducedMotion();
+  const timers: number[] = [];
+  const at = (ms: number, fn: () => void): void => {
+    timers.push(window.setTimeout(fn, reduced ? 0 : ms));
+  };
+
+  /* gold hairline tracing the perimeter */
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const trace = document.createElementNS(svgNS, 'svg');
+  trace.classList.add('board-trace');
+  trace.setAttribute('aria-hidden', 'true');
+  const rect = document.createElementNS(svgNS, 'rect');
+  trace.append(rect);
+  well.append(trace);
+
+  const settle = (): void => {
+    card.classList.add('win-card--shown');
+    trace.remove();
+    onDone?.();
+  };
+
+  if (reduced) {
+    well.classList.add('board-well--complete');
+    fadeIn(card);
+    settle();
+    return;
+  }
+
+  at(200, () => {
+    const w = trace.clientWidth - 5;
+    const h = trace.clientHeight - 5;
+    rect.setAttribute('x', '2.5');
+    rect.setAttribute('y', '2.5');
+    rect.setAttribute('width', String(w));
+    rect.setAttribute('height', String(h));
+    const perimeter = 2 * (w + h);
+    rect.style.strokeDasharray = String(perimeter);
+    rect.style.strokeDashoffset = String(perimeter);
+    rect.animate([{ strokeDashoffset: perimeter }, { strokeDashoffset: 0 }], {
+      duration: 600,
+      easing: EASE.fade,
+      fill: 'forwards',
+    });
+  });
+  at(500, () => well.classList.add('board-well--complete'));
+  at(1000, () => {
+    well.animate(
+      [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.02)', offset: 0.5 },
+        { transform: 'scale(1)' },
+      ],
+      { duration: 900, easing: 'ease-in-out' },
+    );
+  });
+  at(1600, () => {
+    trace.animate([{ opacity: 1 }, { opacity: 0.25 }, { opacity: 1 }, { opacity: 0 }], {
+      duration: 900,
+      easing: EASE.fade,
+      fill: 'forwards',
+    });
+  });
+  at(2200, settle);
+
+  const skip = (): void => {
+    timers.forEach((id) => window.clearTimeout(id));
+    well.getAnimations({ subtree: true }).forEach((a) => a.finish());
+    well.classList.add('board-well--complete');
+    settle();
+  };
+  well.addEventListener('pointerdown', skip, { once: true });
+};
+
 /* Staggered entrance: 24ms steps, compressed so the whole run lands within
    400ms no matter how many items arrive. */
 export const staggerRise = (els: readonly Element[], distance = 16): void => {
