@@ -1,0 +1,135 @@
+@font-face {
+  font-family: 'Noto Serif Ethiopic';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/NotoSerifEthiopic-ethiopic.woff2') format('woff2');
+  unicode-range: U+1200-137F, U+1380-1399, U+2D80-2DDE, U+AB01-AB2E;
+}
+@font-face {
+  font-family: 'Noto Serif Ethiopic';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/NotoSerifEthiopic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+2000-206F;
+}
+@font-face {
+  font-family: 'Noto Sans Ethiopic';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/NotoSansEthiopic-ethiopic.woff2') format('woff2');
+  unicode-range: U+1200-137F, U+1380-1399, U+2D80-2DDE, U+AB01-AB2E;
+}
+@font-face {
+  font-family: 'Noto Sans Ethiopic';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/NotoSansEthiopic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+2000-206F;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  background: var(--ground);
+}
+
+body {
+  min-height: 100%;
+  font-family: var(--font-ui);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  color: var(--ink);
+  background: var(--ground);
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Parchment grain — a fixed feTurbulence layer so the ground reads as material */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--grain-url);
+  background-size: 240px 240px;
+  opacity: 0.5;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Headings receive programmatic focus after navigation for screen readers;
+   the ring is only meaningful on interactive elements. */
+[tabindex='-1']:focus-visible {
+  outline: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.type-display {
+  font-family: var(--font-display);
+  font-size: var(--size-display);
+  line-height: var(--lh-display);
+  font-weight: 700;
+}
+
+.type-header {
+  font-family: var(--font-display);
+  font-size: var(--size-header);
+  line-height: var(--lh-header);
+  font-weight: 600;
+}
+
+.type-section {
+  font-family: var(--font-ui);
+  font-size: var(--size-section);
+  line-height: var(--lh-section);
+  font-weight: 600;
+}
+
+.type-caption {
+  font-size: var(--size-caption);
+  line-height: var(--lh-caption);
+  color: var(--ink-soft);
+}
