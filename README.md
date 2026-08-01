@@ -51,6 +51,18 @@ so the completion sequence can close the seams by interpolating it.
 Zero runtime dependencies. Offline after first load via a service worker whose
 precache list is baked in at build time.
 
+## Deploying
+
+`railway.toml` builds with `npm run build` and starts `node server.js`, a
+static server written against Node built-ins so nothing is added to the
+dependency tree. Railway supplies `PORT`; no other configuration is needed.
+
+The cache headers are the part that matters: hashed bundles under `/assets`
+are immutable, while `index.html` and `sw.js` are `no-cache`. If those two are
+ever cached at the edge, players stay pinned to an old service worker and stop
+receiving updates. `Vary` is deliberately not sent — it makes the worker's
+precached entries miss.
+
 ## Conventions
 
 `CLAUDE.md` holds the rules that apply to every change; `DESIGN_SPEC.md` is the
