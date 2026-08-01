@@ -78,7 +78,10 @@ export const homeScreen = (): HTMLElement => {
   if (data.current) {
     const cont = el('button', 'btn btn--primary home__continue', t('nav.continue'));
     cont.type = 'button';
-    cont.addEventListener('click', () => navigate('board', { continue: '1' }));
+    cont.addEventListener('click', () => {
+      const cur = storage.load().current;
+      navigate(cur?.mode === 'jigsaw' ? 'jigsaw' : 'board', { continue: '1' });
+    });
     lower.append(cont);
   }
   const row = el('div', 'home__links');
