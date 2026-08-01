@@ -1,0 +1,32 @@
+.artdev {
+  padding: var(--sp-6) var(--gutter);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.artdev__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--sp-6);
+}
+
+.artdev__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.artdev__img {
+  aspect-ratio: 1;
+  background-size: cover;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--tile-edge);
+  background-color: var(--ground-deep);
+}
+
+.artdev__cap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}

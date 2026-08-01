@@ -19,6 +19,7 @@ const startPreview = (): Promise<ReturnType<typeof spawn>> =>
   new Promise((resolve, reject) => {
     const proc = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
       stdio: ['ignore', 'pipe', 'pipe'],
+      detached: true,
     });
     proc.stdout?.on('data', (d: Buffer) => {
       if (d.toString().includes('localhost')) resolve(proc);
@@ -60,7 +61,13 @@ const main = async (): Promise<void> => {
     }
   } finally {
     await browser.close();
-    preview.kill();
+    if (preview.pid !== undefined) {
+      try {
+        process.kill(-preview.pid, 'SIGTERM');
+      } catch {
+        preview.kill();
+      }
+    }
   }
   process.exit(0);
 };
