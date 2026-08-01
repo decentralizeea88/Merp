@@ -57,6 +57,8 @@ export const applyMotion = (): void => {
 export const navigate = (name: string, params: ScreenParams = {}): void => {
   const factory = screens.get(name);
   if (!root || !factory) return;
+  const q = new URLSearchParams(params).toString();
+  history.replaceState(null, '', `#${name}${q ? '?' + q : ''}`);
   const next = factory(params);
   next.classList.add('screen');
   const prev = currentEl;

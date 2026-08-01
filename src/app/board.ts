@@ -26,20 +26,51 @@ export const timeText = (ms: number): string => {
   return m === 0 ? sTxt : `${toGeez(m)}:${sTxt}`;
 };
 
-type BoardParams = { art?: string; size?: string; seed?: string; daily?: string };
+type BoardParams = {
+  art?: string;
+  size?: string;
+  seed?: string;
+  daily?: string;
+  continue?: string;
+};
+
+type SavedSlidingState = { seed: string; cells: number[]; daily?: boolean };
+
+const savedSliding = (): (storage.SavedGame & { state: SavedSlidingState }) | null => {
+  const cur = storage.load().current;
+  if (!cur || cur.mode !== 'sliding') return null;
+  const st = cur.state;
+  if (
+    typeof st === 'object' &&
+    st !== null &&
+    typeof (st as SavedSlidingState).seed === 'string' &&
+    Array.isArray((st as SavedSlidingState).cells)
+  ) {
+    return cur as storage.SavedGame & { state: SavedSlidingState };
+  }
+  return null;
+};
 
 export const boardScreen = (params: BoardParams): HTMLElement => {
-  const art = artworkById(params.art ?? '') ?? ARTWORKS[0];
+  const resume = params.continue === '1' ? savedSliding() : null;
+  const art =
+    artworkById(resume ? resume.artworkId : (params.art ?? '')) ?? ARTWORKS[0];
   if (!art) throw new Error('no artworks registered');
-  const grid = Math.max(3, Math.min(5, Number(params.size ?? 4)));
-  const isDaily = params.daily === '1';
-  const seed = params.seed ?? `${art.id}-${grid}-${Date.now()}`;
+  const grid = resume
+    ? resume.size
+    : Math.max(3, Math.min(5, Number(params.size ?? 4)));
+  const isDaily = resume ? resume.state.daily === true : params.daily === '1';
+  const seed = resume
+    ? resume.state.seed
+    : (params.seed ?? `${art.id}-${grid}-${Date.now()}`);
   const recordKey = storage.puzzleKey(isDaily ? 'daily' : 'sliding', art.id, grid);
 
-  let board: Board = shuffleBoard(grid, rngFrom(seed));
-  const par = Math.max(manhattan(board) * 2, grid * grid);
-  let moves = 0;
-  let elapsed = 0;
+  let board: Board = resume
+    ? { grid, cells: resume.state.cells }
+    : shuffleBoard(grid, rngFrom(seed));
+  const par = Math.max(manhattan(shuffleBoard(grid, rngFrom(seed))) * 2, grid * grid);
+  let moves = resume ? resume.moves : 0;
+  let elapsed = resume ? resume.elapsedMs : 0;
   let running = true;
   let finished = false;
 
@@ -52,7 +83,9 @@ export const boardScreen = (params: BoardParams): HTMLElement => {
   back.setAttribute('aria-label', t('nav.back'));
   back.innerHTML =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-  back.addEventListener('click', () => navigate('home'));
+  back.addEventListener('click', () =>
+    navigate(isDaily ? 'home' : 'select', isDaily ? {} : { mode: 'sliding' }),
+  );
   const timeStat = el('div', 'board-hud__stat');
   const timeValue = el('span', 'board-hud__value', '—');
   timeStat.append(el('span', 'board-hud__label', t('board.time')), timeValue);
@@ -60,12 +93,12 @@ export const boardScreen = (params: BoardParams): HTMLElement => {
   const movesValue = el('span', 'board-hud__value', '—');
   movesStat.append(el('span', 'board-hud__label', t('board.moves')), movesValue);
   const spacer = el('div', 'board-hud__spacer');
-  const restart = el('button', 'icon-btn');
-  restart.type = 'button';
-  restart.setAttribute('aria-label', t('board.restart'));
-  restart.innerHTML =
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 2 6M4 10V4m0 6h6"/></svg>';
-  hud.append(back, timeStat, movesStat, spacer, restart);
+  const pauseBtn = el('button', 'icon-btn');
+  pauseBtn.type = 'button';
+  pauseBtn.setAttribute('aria-label', t('board.pause'));
+  pauseBtn.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg>';
+  hud.append(back, timeStat, movesStat, spacer, pauseBtn);
 
   /* stage */
   const stage = el('div', 'board-stage');
@@ -231,16 +264,87 @@ export const boardScreen = (params: BoardParams): HTMLElement => {
   };
   document.addEventListener('visibilitychange', onVisibility);
 
-  updateHud();
-  tick();
-  restart.addEventListener('click', () => {
+  /* pause sheet — restart and hint live here, off the board */
+  const doRestart = (): void => {
     window.clearTimeout(tickHandle);
+    storage.update((d) => {
+      d.current = null;
+    });
     navigate('board', {
       art: art.id,
       size: String(grid),
       ...(isDaily ? { daily: '1', seed } : {}),
     });
-  });
+  };
+
+  let sheet: HTMLElement | null = null;
+  const closePause = (): void => {
+    sheet?.remove();
+    sheet = null;
+    if (!finished && document.visibilityState === 'visible') running = true;
+  };
+  const showHint = (): void => {
+    running = false;
+    const overlay = el('button', 'hint-overlay');
+    overlay.type = 'button';
+    overlay.setAttribute('aria-label', t('common.close'));
+    void renderArtwork(art).then((url) => {
+      overlay.style.backgroundImage = `url(${url})`;
+    });
+    overlay.addEventListener('click', () => {
+      overlay.remove();
+      if (!finished) running = true;
+    });
+    screen.append(overlay);
+    overlay.focus();
+  };
+  const openPause = (): void => {
+    if (sheet || finished) return;
+    running = false;
+    sheet = el('div', 'sheet');
+    const backdrop = el('button', 'sheet__backdrop');
+    backdrop.type = 'button';
+    backdrop.setAttribute('aria-label', t('common.close'));
+    backdrop.addEventListener('click', closePause);
+    const card = el('div', 'sheet__card');
+    card.setAttribute('role', 'dialog');
+    card.setAttribute('aria-label', t('board.pause'));
+    card.append(el('h2', 'sheet__title type-section', t('board.pause')));
+    const mkBtn = (label: string, cls: string, fn: () => void): HTMLButtonElement => {
+      const b = el('button', cls, label);
+      b.type = 'button';
+      b.addEventListener('click', fn);
+      return b;
+    };
+    card.append(
+      mkBtn(t('board.resume'), 'btn btn--primary sheet__btn', closePause),
+      mkBtn(t('board.viewImage'), 'btn sheet__btn', () => {
+        closePause();
+        showHint();
+      }),
+      mkBtn(t('board.restart'), 'btn sheet__btn', doRestart),
+      mkBtn(t('nav.home'), 'btn sheet__btn', () => navigate('home')),
+    );
+    sheet.append(backdrop, card);
+    screen.append(sheet);
+    (card.querySelector('button') as HTMLButtonElement | null)?.focus();
+  };
+  pauseBtn.addEventListener('click', openPause);
+
+  const onKey = (e: KeyboardEvent): void => {
+    if (!screen.isConnected) {
+      document.removeEventListener('keydown', onKey);
+      return;
+    }
+    if (e.key === 'Escape') {
+      if (sheet) closePause();
+      else openPause();
+    }
+  };
+  document.addEventListener('keydown', onKey);
+
+  updateHud();
+  tick();
 
   return screen;
 };

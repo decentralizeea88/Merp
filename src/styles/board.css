@@ -223,6 +223,77 @@
   box-shadow: inset 0 0 0 1px var(--tile-edge);
 }
 
+/* pause sheet */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(23, 18, 12, 0.45);
+  cursor: default;
+}
+
+.sheet__card {
+  position: relative;
+  width: min(100%, 420px);
+  background: var(--tile);
+  border: 1px solid var(--tile-edge);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  padding: var(--sp-6) var(--sp-6) calc(var(--sp-6) + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  animation: sheet-rise var(--dur-rise) var(--ease-rise);
+}
+
+@keyframes sheet-rise {
+  from {
+    transform: translate3d(0, 24px, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+.sheet__title {
+  text-align: center;
+  margin-bottom: var(--sp-2);
+}
+
+.sheet__btn {
+  width: 100%;
+}
+
+.hint-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background-color: rgba(23, 18, 12, 0.55);
+  background-size: min(88vw, 520px);
+  background-position: center;
+  background-repeat: no-repeat;
+  animation: hint-fade var(--dur-fade) var(--ease-fade);
+  cursor: pointer;
+}
+
+@keyframes hint-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .icon-btn {
   width: 44px;
   height: 44px;
