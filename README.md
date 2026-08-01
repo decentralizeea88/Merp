@@ -53,15 +53,25 @@ precache list is baked in at build time.
 
 ## Deploying
 
-`railway.toml` builds with `npm run build` and starts `node server.js`, a
-static server written against Node built-ins so nothing is added to the
-dependency tree. Railway supplies `PORT`; no other configuration is needed.
+The build is static — `dist/` is the whole game. Any static host works:
+build with `npm run build` and publish `dist`. The app routes on the hash, so
+no rewrite rules are needed.
 
-The cache headers are the part that matters: hashed bundles under `/assets`
-are immutable, while `index.html` and `sw.js` are `no-cache`. If those two are
-ever cached at the edge, players stay pinned to an old service worker and stop
-receiving updates. `Vary` is deliberately not sent — it makes the worker's
-precached entries miss.
+On hosts that need a process (Railway, Render, Fly), `railway.toml` starts
+`node server.js`, a static server written against Node built-ins so nothing
+is added to the dependency tree. `PORT` comes from the environment.
+
+Whichever host, the cache headers are the part that matters, and
+`public/_headers` carries them for Cloudflare Pages and Netlify:
+
+- `/assets/*` is fingerprinted by Vite, so `immutable`
+- `index.html` and `sw.js` are `no-cache`
+
+If those two are ever cached at the edge, players stay pinned to an old
+service worker and stop receiving updates. `Vary` is deliberately not sent —
+it makes the worker's precached entries miss.
+
+Keep `server.js` and `public/_headers` in step; they express the same policy.
 
 ## Conventions
 
