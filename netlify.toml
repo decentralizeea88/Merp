@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# The game routes on the URL hash, so every path is the same shell. Netlify
+# serves a real file when one matches and falls back here otherwise, which
+# is what stops a refresh or a shared link 404ing.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

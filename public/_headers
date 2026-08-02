@@ -1,0 +1,27 @@
+# Cache policy for static hosts that read _headers (Cloudflare Pages,
+# Netlify). Mirrors server.js — keep the two in step.
+#
+# The service worker and the shell gate every update. If either is cached
+# at the edge, players stay pinned to an old worker and stop receiving
+# new versions of the game.
+
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /
+
+/index.html
+  Cache-Control: no-cache
+
+# Vite fingerprints everything here, so it can never go stale.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Stable names, so cache them but leave room to swap a file.
+/fonts/*
+  Cache-Control: public, max-age=604800
+
+/*.svg
+  Cache-Control: public, max-age=604800
+
+/manifest.webmanifest
+  Cache-Control: public, max-age=604800
