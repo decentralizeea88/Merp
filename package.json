@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "start": "node server.js",
     "test": "vitest run",
-    "shots": "tsx scripts/shots.ts"
+    "shots": "tsx scripts/shots.ts",
+    "demo": "tsx scripts/demo.ts"
   },
   "engines": {
     "node": ">=20"
